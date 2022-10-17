@@ -1,40 +1,85 @@
 """
 @author: Isnan Nabawi
 """
-print("pyhton is running")
+print("..:: SMARTPHONE DSS ::..")
+# start time
+from datetime import datetime
+
+now = datetime.now()
+
+current_time = now.strftime("%H:%M:%S")
+print("Time Start = ", current_time)
+
 import matplotlib.pyplot as plt
+import csv
+import numpy as np
+
 from matplotlib.colors import ListedColormap
-from sklearn import datasets
-
 from sklearn_som.som import SOM
+from sklearn import preprocessing
 
-# Load iris data
-iris = datasets.load_iris()
-iris_data = iris.data
-iris_label = iris.target
+# load gsm data
+file = open('gsm.csv')
+type(file)
 
-# Extract just two features (just for ease of visualization)
-iris_data = iris_data[:, :2]
+# print header
+gsm_spec_label = []
+csvreader = csv.reader(file)
+header = []
+header = next(csvreader)
 
-print(iris_data)
+gsm_spec_label = np.array(header)
+print(gsm_spec_label)
+
+gsm_spec = []
+for row in csvreader:
+        gsm_spec.append([float(i) for i in row])
+
+gsm_spec = np.array(gsm_spec)
+
+# select feature
+feature_selected = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+
+#print(gsm_spec_label[feature_selected[0]])
+
+for x in feature_selected:
+    print(gsm_spec_label[feature_selected[x-1]])
+
+# normalize with min max scale
+gsm_spec = preprocessing.minmax_scale(gsm_spec[:,feature_selected],axis=0)
+
+# Extract features
+#gsm_spec = gsm_spec[:, 1:20]
+
+#print(gsm_spec)
 
 # Build a 3x1 SOM (3 clusters)
-som = SOM(m=3, n=1, dim=2, random_state=1234)
+som = SOM(m=3, n=2, dim=19, random_state=1234)
 
 # Fit it to the data
-som.fit(iris_data)
+som.fit(gsm_spec)
 
 # Assign each datapoint to its predicted cluster
-predictions = som.predict(iris_data)
+predictions = som.predict(gsm_spec)
+predictions = np.array(predictions)
+#print(predictions)
 
+print(len(feature_selected))
 # Plot the results
-fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(5,7))
-x = iris_data[:,0]
-y = iris_data[:,1]
-colors = ['red', 'green', 'blue']
+for d in feature_selected:
+    y = predictions[:]
+    x = gsm_spec[:,d-1]
+    #colors = ['red', 'green', 'blue']
+    #print(x)
+    fig, ax = plt.subplots()
+    ax.scatter(x, y)
+    ax.title.set_text(gsm_spec_label[d])
+    figname = 'result' + str(gsm_spec_label[d-1])
+    plt.savefig(figname)
+#/////////////////////////
 
-ax[0].scatter(x, y, c=iris_label, cmap=ListedColormap(colors))
-ax[0].title.set_text('Actual Classes')
-ax[1].scatter(x, y, c=predictions, cmap=ListedColormap(colors))
-ax[1].title.set_text('SOM Predictions')
-plt.savefig('iris_example.png')
+
+now = datetime.now()
+
+current_time = now.strftime("%H:%M:%S")
+print("Time Finished = ", current_time)
