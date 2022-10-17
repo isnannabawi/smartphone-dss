@@ -29,7 +29,7 @@ header = []
 header = next(csvreader)
 
 gsm_spec_label = np.array(header)
-print(gsm_spec_label)
+#print(gsm_spec_label)
 
 gsm_spec = []
 for row in csvreader:
@@ -37,24 +37,44 @@ for row in csvreader:
 
 gsm_spec = np.array(gsm_spec)
 
+#1 n_network_technology
+#2 n_body_weight
+#3 n_display_type
+#4 n_display_size
+#5 n_micro_sdcard
+#6 n_sound_3p5mm
+#7 n_bluetooth
+#8 n_gps
+#9 n_comms_usb
+#10 n_usb_conn
+#11 n_fingerprint
+#12 n_android_ver
+#13 n_main_camera_resolution
+#14 n_main_camera_af
+#15 n_main_camera_ois
+#16 n_battery_capacity
+#17 n_total_cpu_speed
+#18 n_internal_memory
+#19 n_ram
+
 # select feature
-feature_selected = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+#feature_selected = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+feature_selected = [2,16]
 
-#print(gsm_spec_label[feature_selected[0]])
-
-for x in feature_selected:
-    print(gsm_spec_label[feature_selected[x-1]])
+for x in range (len(feature_selected)):
+    #print(feature_selected[x])
+    print(gsm_spec_label[feature_selected[x]])
 
 # normalize with min max scale
 gsm_spec = preprocessing.minmax_scale(gsm_spec[:,feature_selected],axis=0)
 
 # Extract features
-#gsm_spec = gsm_spec[:, 1:20]
+#gsm_spec = gsm_spec[:, feature_selected]
 
 #print(gsm_spec)
 
 # Build a 3x1 SOM (3 clusters)
-som = SOM(m=3, n=2, dim=19, random_state=1234)
+som = SOM(m=8, n=1, dim=len(feature_selected), random_state=0)
 
 # Fit it to the data
 som.fit(gsm_spec)
@@ -64,17 +84,16 @@ predictions = som.predict(gsm_spec)
 predictions = np.array(predictions)
 #print(predictions)
 
-print(len(feature_selected))
 # Plot the results
-for d in feature_selected:
+for d in range (len(feature_selected)):
     y = predictions[:]
-    x = gsm_spec[:,d-1]
+    x = gsm_spec[:,d]
     #colors = ['red', 'green', 'blue']
     #print(x)
     fig, ax = plt.subplots()
     ax.scatter(x, y)
-    ax.title.set_text(gsm_spec_label[d])
-    figname = 'result' + str(gsm_spec_label[d-1])
+    ax.title.set_text(gsm_spec_label[feature_selected[d]])
+    figname = 'result' + str(gsm_spec_label[feature_selected[d]])
     plt.savefig(figname)
 #/////////////////////////
 
