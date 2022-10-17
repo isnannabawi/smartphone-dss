@@ -59,7 +59,7 @@ gsm_spec = np.array(gsm_spec)
 
 # select feature
 #feature_selected = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
-feature_selected = [2,16]
+feature_selected = [2]
 
 for x in range (len(feature_selected)):
     #print(feature_selected[x])
