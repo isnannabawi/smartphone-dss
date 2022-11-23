@@ -58,7 +58,7 @@ gsm_spec = np.array(gsm_spec)
 #18 n_internal_memory
 #19 n_ram
 #feature_selected = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
-feature_selected = [1,3,2]
+feature_selected = [1,2,3,4,5,6,7,8,9,10,11,12]
 
 print("\nFeature selected:")
 label_feature_selected = []
@@ -74,8 +74,8 @@ gsm_spec = preprocessing.minmax_scale(gsm_spec[:,feature_selected],axis=0)
 #gsm_spec = gsm_spec[:, feature_selected]
 
 # Build SOM dimension
-som_m = 3
-som_n = 2
+som_m = 2
+som_n = 1
 som = SOM(m=som_m, n=som_n, dim=len(feature_selected), random_state=0)
 print('\nDimensions   = ', som_m, 'x', som_n)
 print('Cluster Size = ', som_m*som_n)
@@ -93,21 +93,36 @@ ori_gsm_spec = np.c_[ori_gsm_spec,predictions]
 # Plot the results
 for d in range (len(feature_selected)):
     y = predictions[:]
+   # y = gsm_spec[:,d-1]
     x = gsm_spec[:,d]
-    #colors = ['red', 'green', 'blue']
+    colors = ['red', 'green', 'blue', 'lime', 'yellow','grey']
     fig, ax = plt.subplots()
-    ax.scatter(x, y)
+    ax.scatter(x, y, c=predictions, cmap=ListedColormap(colors))
     ax.title.set_text(gsm_spec_label[feature_selected[d]])
     figname = 'result' + str(gsm_spec_label[feature_selected[d]])
     plt.savefig(figname)
 #/////////////////////////
 
 # Export Result in CSV
-data = np.asarray( [[1,2,3],[5,6,7]] ) 
 with open('result.csv', 'w', newline='', encoding='utf-8') as file:
     writer = csv.writer(file, delimiter=',')
     writer.writerow(["phone_id"] + label_feature_selected + ["cluster"]) # write header
     writer.writerows(ori_gsm_spec)
+
+# Calculate Silhoutte Score
+from sklearn.metrics import silhouette_score
+score = silhouette_score(gsm_spec, predictions, metric='euclidean')
+print('\nSilhouetter Score: %.3f' % score)
+
+# Calculate Davis Bouldin Score
+from sklearn.metrics import davies_bouldin_score
+score = davies_bouldin_score(gsm_spec, predictions)
+print('Davis Bouldin Score: %.3f' % score)
+
+# # Calculate Homogeneity Score
+# from sklearn import metrics
+# score = metrics.homogeneity_score(gsm_spec, predictions)
+# print('Homogeneity Score: %.3f' % score)
 
 # End of process
 now = datetime.now()
