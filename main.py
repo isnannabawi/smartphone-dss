@@ -59,6 +59,7 @@ gsm_spec = np.array(gsm_spec)
 #19 n_ram
 #feature_selected = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
 feature_selected = [2,4,16,17,19,13,18]
+#feature_selected = [2,16]
 
 print("\nFeature used:")
 label_feature_selected = []
@@ -70,90 +71,93 @@ for x in range (len(feature_selected)):
 ori_gsm_spec = gsm_spec[:, [0] + feature_selected]
 gsm_spec = preprocessing.minmax_scale(gsm_spec[:,feature_selected],axis=0)
 
-# Extract features
-#gsm_spec = gsm_spec[:, feature_selected]
+lr_ = 0.5 #init lr
+while lr_ < 0.9:
+    lr_ += 0.1
+    sigma_ = 0.4
+    while sigma_ < 0.9:
+        sigma_ += 0.1
+        #repeat for research
+        print("\nLR="+str(lr_)+"\tSIGMA="+str(sigma_))
+        print("Dimensions\tRoom Size\tCluster Created\tDavis Bouldin Score\t")
+        report = ''
+        p = 0
+        while p<9:
+            p += 1
+            q = 1
+            while q<9:
+                q += 1
+                # Build SOM dimension
+                som_m = q
+                som_n = p
+                som = SOM(m=som_m, n=som_n, dim=len(feature_selected), lr=lr_, sigma=sigma_, max_iter = 100, random_state=1000)
+                # print('\nDimensions =', som_m, 'x', som_n)
+                # print('Room Size =', som_m*som_n)
 
-#repeat for research
-p = 0
-q = 1
+                report = str(som_n) + 'x' + str(som_m)
+                report = str(report) + '\t' + str(som_m*som_n)
 
-print("\nDimensions\tRoom Size\tCluster Created\tSilhouette Score\tDavis Bouldin Score\tCalinski-Harabasz Index")
-report = ''
+                # Fit it to the data
+                som.fit(gsm_spec)
+                
+                # Assign each datapoint to its predicted cluster
+                predictions = som.predict(gsm_spec)
+                predictions = np.array(predictions)
 
-while p<10:
-    p += 1
-    q = 1
-    while q<5:
-        q += 1
-        # Build SOM dimension
-        som_m = p
-        som_n = q
-        som = SOM(m=som_m, n=som_n, dim=len(feature_selected), lr=1, max_iter = 10000, random_state=None)
-        # print('\nDimensions =', som_m, 'x', som_n)
-        # print('Room Size =', som_m*som_n)
+                # Add predicted cluster column to table for result export
+                # ori_gsm_spec = gsm_spec[:, [0] + feature_selected]
+                report_buff = np.c_[ori_gsm_spec,predictions]
+                #print('Cluster created =', max(predictions)+1)
+                report = report + '\t' + str(max(predictions)+1)
 
-        report = str(som_m) + 'x' + str(som_n)
-        report = str(report) + '\t' + str(som_m*som_n)
+                # Plot the results
+                # for d in range (len(feature_selected)):
+                #     y = predictions[:]
+                # # y = gsm_spec[:,d-1]
+                #     x = gsm_spec[:,d]
+                #     colors = ['red', 'green', 'blue', 'lime', 'yellow','grey']
+                #     fig, ax = plt.subplots()
+                #     ax.scatter(x, y, c=predictions, cmap=ListedColormap(colors))
+                #     ax.title.set_text(gsm_spec_label[feature_selected[d]])
+                #     figname = 'result' + str(gsm_spec_label[feature_selected[d]])
+                #     plt.savefig(figname)
+                #/////////////////////////
 
-        # Fit it to the data
-        som.fit(gsm_spec)
+                # Export Result in CSV
+                # with open('./somresult/result_'+str(p)+'_'+str(q)+'.csv', 'w', newline='', encoding='utf-8') as file:
+                #     writer = csv.writer(file, delimiter=',')
+                #     writer.writerow(["phone_id"] + label_feature_selected + ["cluster"]) # write header
+                #     writer.writerows(report_buff)
 
-        # Assign each datapoint to its predicted cluster
-        predictions = som.predict(gsm_spec)
-        predictions = np.array(predictions)
+                # Calculate Silhoutte Score
 
-        # Add predicted cluster column to table for result export
-        ori_gsm_spec = np.c_[ori_gsm_spec,predictions]
-        #print('Cluster created =', max(predictions)+1)
-        report = report + '\t' + str(max(predictions)+1)
+                # # Inisalisasi fungsi silhouette score
+                # from sklearn.metrics import silhouette_score
+                # # Inisalisasi fungsi silhouette score
+                # score = silhouette_score(gsm_spec, predictions, metric='euclidean')
+                # # memasukkan hasil perhitungan ke variabel report untuk ditampilkan.
+                # report = report + str('\t%.3f' % score)
 
-        # Plot the results
-        # for d in range (len(feature_selected)):
-        #     y = predictions[:]
-        # # y = gsm_spec[:,d-1]
-        #     x = gsm_spec[:,d]
-        #     colors = ['red', 'green', 'blue', 'lime', 'yellow','grey']
-        #     fig, ax = plt.subplots()
-        #     ax.scatter(x, y, c=predictions, cmap=ListedColormap(colors))
-        #     ax.title.set_text(gsm_spec_label[feature_selected[d]])
-        #     figname = 'result' + str(gsm_spec_label[feature_selected[d]])
-        #     plt.savefig(figname)
-        #/////////////////////////
+                # Calculate Davis Bouldin Score
+                from sklearn.metrics import davies_bouldin_score
+                score = davies_bouldin_score(gsm_spec, predictions)
+                #print('Davis Bouldin Score: %.3f' % score)
+                report = report + str('\t%.3f' % score)
 
-        # Export Result in CSV
-        # with open('result.csv', 'w', newline='', encoding='utf-8') as file:
-        #     writer = csv.writer(file, delimiter=',')
-        #     writer.writerow(["phone_id"] + label_feature_selected + ["cluster"]) # write header
-        #     writer.writerows(ori_gsm_spec)
+                # # Calculate Calinski-Harabasz Index
+                # from sklearn import metrics
+                # score = metrics.calinski_harabasz_score(gsm_spec, predictions)
+                # report = report + str('\t%.3f' % score)
+                
+                # # Calculate Homogeneity Score
+                # from sklearn import metrics
+                # score = metrics.homogeneity_score(gsm_spec, predictions)
+                # print('Homogeneity Score: %.3f' % score)
+                print(report)
 
-        # Calculate Silhoutte Score
-        from sklearn.metrics import silhouette_score
-        score = silhouette_score(gsm_spec, predictions, metric='euclidean')
-        #print('Silhouette Score: %.3f' % score)
-        report = report + str('\t%.3f' % score)
+# End of process
+now = datetime.now()
 
-        # Calculate Davis Bouldin Score
-        from sklearn.metrics import davies_bouldin_score
-        score = davies_bouldin_score(gsm_spec, predictions)
-        #print('Davis Bouldin Score: %.3f' % score)
-        report = report + str('\t%.3f' % score)
-
-        # Calculate Calinski-Harabasz Index
-        from sklearn import metrics
-        from sklearn.metrics import pairwise_distances
-        score = metrics.calinski_harabasz_score(gsm_spec, predictions)
-        report = report + str('\t%.3f' % score)
-
-        # # Calculate Homogeneity Score
-        # from sklearn import metrics
-        # score = metrics.homogeneity_score(gsm_spec, predictions)
-        # print('Homogeneity Score: %.3f' % score)
-
-        # End of process
-        now = datetime.now()
-
-        current_time = now.strftime("%H:%M:%S")
-        #print("\nTime Finished = ", current_time)
-        #rint("Have a great day!\n")
-        print(report)
-
+current_time = now.strftime("%H:%M:%S")
+print("\nTime Finished = ", current_time)
+print("Have a great day!\n")
